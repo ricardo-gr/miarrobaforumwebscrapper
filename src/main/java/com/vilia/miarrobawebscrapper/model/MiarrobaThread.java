@@ -80,4 +80,12 @@ public class MiarrobaThread {
 		return this.startingMessage.getPostDate();
 	}
 
+	@Override
+	public String toString() {
+		return "MiarrobaThread [threadId=" + threadId + ", threadUrl=" + threadUrl + ", threadTitle=" + threadTitle
+				+ ", startingMessage=" + startingMessage + ", comments=" + comments + "]";
+	}
+
+	
+	
 }

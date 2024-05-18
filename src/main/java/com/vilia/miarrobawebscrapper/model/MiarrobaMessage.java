@@ -77,4 +77,12 @@ public class MiarrobaMessage {
 		this.contentHTML = contentHTML;
 	}
 
+	@Override
+	public String toString() {
+		return "MiarrobaMessage [messageId=" + messageId + ", messageUrl=" + messageUrl + ", user=" + user
+				+ ", postDate=" + postDate + ", content=" + content + ", contentHTML=" + contentHTML + "]";
+	}
+	
+	
+
 }

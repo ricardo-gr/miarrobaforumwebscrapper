@@ -9,3 +9,5 @@ spring:
   hibernate:
     hbm2ddl.auto: create
     show_sql: true
+mws:
+  url: vilia.mforos.com

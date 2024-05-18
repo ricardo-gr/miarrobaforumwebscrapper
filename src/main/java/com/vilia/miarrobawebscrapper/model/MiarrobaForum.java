@@ -66,16 +66,22 @@ public class MiarrobaForum {
 	public void setThreads(List<MiarrobaThread> threads) {
 		this.threads = threads;
 	}
-	
+
 	public int getForumLevel() {
-		if(this.parentForum == null)
+		if (this.parentForum == null)
 			return 1;
 		else
 			return this.parentForum.getForumLevel() + 1;
 	}
-	
+
 	public int getThreadNumber() {
 		return this.threads.size();
+	}
+	
+	@Override
+	public String toString() {
+		return "MiarrobaForum [forumId=" + forumId + ", forumUrl=" + forumUrl + ", parentForum=" + parentForum
+				+ ", forumTitle=" + forumTitle + ", threads=" + threads + "]";
 	}
 
 }

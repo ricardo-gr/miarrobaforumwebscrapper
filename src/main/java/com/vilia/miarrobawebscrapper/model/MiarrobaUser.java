@@ -52,4 +52,12 @@ public class MiarrobaUser {
 		this.role = role;
 	}
 
+	@Override
+	public String toString() {
+		return "MiarrobaUser [userId=" + userId + ", username=" + username + ", picture=" + picture + ", role=" + role
+				+ "]";
+	}
+	
+	
+
 }
