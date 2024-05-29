@@ -13,6 +13,7 @@ public class ScrapperUrlConnector {
 	
 	private final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 	
+	private URL targetUrl;
 	private Document doc = null;
 	
 	public ScrapperUrlConnector(URL targetUrl) {
@@ -25,10 +26,16 @@ public class ScrapperUrlConnector {
 		} catch (IOException e) {
 			logger.error(String.format("Error while connecting to URL: %s", targetUrl), e);
 		}
+		
+		this.targetUrl = targetUrl;
 	}
 	
 	public Document getDocument() {
 		return doc;
+	}
+	
+	public URL getUrl() {
+		return targetUrl;
 	}
 	
 	public boolean isConnectionStablished() {

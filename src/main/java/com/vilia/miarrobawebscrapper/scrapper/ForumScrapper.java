@@ -13,6 +13,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ObjectUtils;
 
 import com.vilia.miarrobawebscrapper.model.MiarrobaForum;
 import com.vilia.miarrobawebscrapper.model.MiarrobaThread;
@@ -25,16 +26,16 @@ public class ForumScrapper {
 
 	private static final String TITLE_XPATH = "/html/body/div[@id='SectionForo']/table[@id = 'ForoMenuIndice']/tbody/tr[contains(@class, 'tablaRowFirst')]/td/div/div[@class = 'columnsContainer']/div/a[1]";
 
-	private static final String ROOT_FORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='mmenu_wrapper']/div[@id='SectionComu']";
+	private static final String ROOT_FORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionComu']";
 	private static final String SUBFORUM_ENTRIES_XPATH = ROOT_FORUM_CONTENT_SECTION_XPATH
-			+ "/table[not(@id)]/tbody/tr[contains(@class, 'tablaRow')]/td[@class='ancho100']/div/a[1]";
+			+ "/table[not(@id)]/tbody/tr[contains(@class, 'tablaRow')]/td[contains(@class, 'ancho100')]/div/a[1]";
 	private static final String SUBFORUM_ENTRY_XPATH = "/td/div/a[1]/@href";
 
-	private static final String SUBFORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='mmenu_wrapper']/div[@id='SectionForo']";
+	private static final String SUBFORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionForo']";
 	private static final String THREADS_TABLE_XPATH = SUBFORUM_CONTENT_SECTION_XPATH
 			+ "/table[@id = 'ForoIndiceTemas']/tbody";
 	private static final String THREAD_ENTRIES_XPATH = THREADS_TABLE_XPATH
-			+ "/tr[contains(@class, 'tablaRow')]/td[@class='ancho100']/div[@class = 'topicMsg']/a";
+			+ "/tr[contains(@class, 'tablaRow')]/td[contains(@class, 'ancho100')]/div[@class = 'topicMsg']/a";
 	private static final String THREADS_PAGINATOR_XPATH = THREADS_TABLE_XPATH
 			+ "tr[contains(@class, 'boxTitle')]/td/div[@class = 'paginacionForos']/div[@class='paginador']/a[contains(@class, 'number')]";
 
@@ -82,7 +83,6 @@ public class ForumScrapper {
 		ScrapperUrlConnector connection = new ScrapperUrlConnector(forumUrl);
 
 		if (!connection.isConnectionStablished()) {
-			logger.error("Connection not stablished: ", forumUrl);
 			throw new ForumScrapperException("Connection not stablished", forumUrl, "Unknown");
 		}
 
@@ -167,7 +167,10 @@ public class ForumScrapper {
 		Elements subforumsXml = doc.selectXpath(SUBFORUM_ENTRIES_XPATH);
 
 		for (Element subforumXml : subforumsXml) {
-			String subforumAnchor = subforumXml.selectXpath(SUBFORUM_ENTRY_XPATH).text();
+			String subforumAnchor = subforumXml.attr("href");
+			
+			if (subforumAnchor == null || ObjectUtils.isEmpty(subforumAnchor))
+				continue;
 
 			URL subformUrl = null;
 
@@ -184,22 +187,25 @@ public class ForumScrapper {
 
 		// TODO: Save forum to DB
 
-		this.subForumURLs.stream().map(url -> new ForumScrapper(url, this.forum)).forEach((forum) -> {
+		//TODO: Manage retries and test execution logic vs test execution logic
+		/*this.subForumURLs.stream().map(url -> new ForumScrapper(url, this.forum)).forEach((forum) -> {
 			try {
 				forum.parseForum();
 			} catch (ForumScrapperException e) {
 				logger.error(String.format("Error while parsing subforum URL: %s. Parsing for this subform stopped.",
 						forum.getForumUrl().toString()), e);
 			}
-		});
+		});*/
 	}
 
 	private void parseThreads(ScrapperUrlConnector connection) {
 		List<URL> additionalPages = calculateThreadsPages(connection);
 
-		scrapFirstThreadsPage(connection);
+		scrapThreadsPage(connection);
 
-		additionalPages.stream().forEach(this::scrapThreadsPage);
+		additionalPages.stream().forEach(this::scrapAdditionalThreadPages);
+		
+		//TODO: Scrap threads themselves
 
 	}
 
@@ -220,18 +226,44 @@ public class ForumScrapper {
 		return urlList;
 	}
 
-	private void scrapFirstThreadsPage(ScrapperUrlConnector connection) {
+	private void scrapThreadsPage(ScrapperUrlConnector connection) {
 		Document doc = connection.getDocument();
 
 		Elements threadsXml = doc.selectXpath(THREAD_ENTRIES_XPATH);
 		
-		// TODO Auto-generated method stub
-
+		List<MiarrobaThread> threadsInPage = parseThreadsFromAnchorList(threadsXml, connection.getUrl());
+		
+		this.threads.addAll(threadsInPage);
 	}
 
-	private Object scrapThreadsPage(URL url) {
-		// TODO Auto-generated method stub
-		return null;
+	private List<MiarrobaThread> parseThreadsFromAnchorList(Elements threadsXml, URL url) {
+		return threadsXml.stream().map(anchor -> {
+			MiarrobaThread thread = new MiarrobaThread();
+			
+			String threadTitle = anchor.text();
+			String threadHref = anchor.attr("href");
+			URL threadHrefUrl = null;
+			
+			try {
+				threadHrefUrl = new URL(ScrapperFunctionalUtils.getBaseUrl(url) + threadHref);
+			} catch (Exception e) {
+				logger.error(String.format("Couldn't create URL for thread '%s' url in href: %s. Base url: %s", threadTitle, threadHref, url), e);
+				return null;
+			}
+				
+			
+			thread.setThreadTitle(threadTitle);
+			thread.setThreadUrl(threadHrefUrl);
+			
+			return thread;
+		}).filter(Objects::nonNull)
+				.toList();
+	}
+
+	private void scrapAdditionalThreadPages(URL url) {
+		ScrapperUrlConnector pageConnection = new ScrapperUrlConnector(url);
+		
+		scrapThreadsPage(pageConnection);
 	}
 
 }

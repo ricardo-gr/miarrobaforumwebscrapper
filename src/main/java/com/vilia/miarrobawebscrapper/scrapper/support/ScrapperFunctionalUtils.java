@@ -24,5 +24,14 @@ public class ScrapperFunctionalUtils {
 		
 		return pageURL;
 	};
+	
+	public static String getBaseUrl(URL url) {
+		String result = url.toString();
+		
+		if (result.endsWith("/"))
+			result = result.substring(0, result.length() - 1);
+		
+		return result;
+	}
 
 }
