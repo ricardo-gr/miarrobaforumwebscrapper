@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:file:./data/db
+    username: sa
+    password: password
+    driverClassName: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+  hibernate:
+    hbm2ddl.auto: create
+    show_sql: true
+mws:
+  url: vilia.mforos.com
