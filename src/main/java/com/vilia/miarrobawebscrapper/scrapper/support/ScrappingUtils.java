@@ -7,10 +7,15 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ScrapperFunctionalUtils {
-	private static Logger logger = LoggerFactory.getLogger(ScrapperFunctionalUtils.class);
+import com.vilia.miarrobawebscrapper.scrapper.exception.ForumScrapperException;
+
+public class ScrappingUtils {
+	private static Logger logger = LoggerFactory.getLogger(ScrappingUtils.class);
 	
-	private ScrapperFunctionalUtils() {}
+	public static final String ROOT_FORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionComu']";
+	public static final String SUBFORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionForo']";
+	
+	private ScrappingUtils() {}
 	
 	public static URL parseHrefAttributeMethod(Element e, URL baseUrl) {
 		String pageRelativeUrl = e.attr("href");
@@ -32,6 +37,16 @@ public class ScrapperFunctionalUtils {
 			result = result.substring(0, result.length() - 1);
 		
 		return result;
+	}
+	
+	public static ScrapperUrlConnector connectToForum(URL url) throws ForumScrapperException {
+		ScrapperUrlConnector connection = new ScrapperUrlConnector(url);
+
+		if (!connection.isConnectionStablished()) {
+			throw new ForumScrapperException("Connection not stablished", url, "Unknown");
+		}
+
+		return connection;
 	}
 
 }

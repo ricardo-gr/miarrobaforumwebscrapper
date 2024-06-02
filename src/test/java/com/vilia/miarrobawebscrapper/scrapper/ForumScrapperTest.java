@@ -9,17 +9,22 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import com.vilia.miarrobawebscrapper.model.MiarrobaForum;
 import com.vilia.miarrobawebscrapper.model.MiarrobaThread;
 import com.vilia.miarrobawebscrapper.scrapper.exception.ForumScrapperException;
+import com.vilia.miarrobawebscrapper.scrapper.forumscrapper.ForumScrapperFactory;
 
 @RunWith(SpringRunner.class)
 @ExtendWith(MockitoExtension.class)
 @SpringBootTest
 public class ForumScrapperTest {
+	private static Logger logger = LoggerFactory.getLogger(ForumScrapperTest.class);
+	
 	private static final String TEST_URL = "https://vilia.mforos.com";
 	private static final String TEST_GENERAL_FORUM_URL = "/968735-general";
 	private static final String TEST_REGLAS_FORUM_URL = "/1910438-reglas/";
@@ -54,25 +59,54 @@ public class ForumScrapperTest {
 	}
 
 	private static MiarrobaForum scrapForumUrl(String url, MiarrobaForum parent) {
-		ForumScrapper forumScrapper = initForumScrapper(url, parent);
+		ForumScrapper forumScrapper = null;
+		
+		if (parent == null)
+			forumScrapper = initRootForumScrapper(url);
+		else
+			forumScrapper = initSubForumScrapper(url, parent);
+		
+		if(forumScrapper == null)
+			return new MiarrobaForum();
 		
 		MiarrobaForum forum = scrapForum(forumScrapper);
 		
 		return forum;
 	}
 	
-	private static ForumScrapper initForumScrapper(String urlString, MiarrobaForum parent) {
-		URL testUrl = null;
+	private static ForumScrapper initRootForumScrapper(String urlString) {
+		URL testUrl = getURL(urlString);
+		
 		try {
-			testUrl = new URL(urlString);
+			return ForumScrapperFactory.getRootForumScrapper(testUrl);
+		} catch (ForumScrapperException e) {
+			logger.error(String.format("Test URL does not belong to a Root Forum: %s", urlString));
+			return null;
+		}
+	}
+	
+	private static ForumScrapper initSubForumScrapper(String urlString, MiarrobaForum parent) {
+		URL testUrl = getURL(urlString);
+		
+		try {
+			return ForumScrapperFactory.getSubForumScrapper(testUrl, parent);
+		} catch (ForumScrapperException e) {
+			logger.error(String.format("Test URL does not belong to a SubForum: %s", urlString));
+			return null;
+		}
+	}
+	
+	private static URL getURL(String urlString) {
+		try {
+			return new URL(urlString);
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		return new ForumScrapper(testUrl, parent);
+		return null;
 	}
-	
+
 	private static MiarrobaForum scrapForum(ForumScrapper forumScrapper) {
 		MiarrobaForum forum = null;
 		try {
