@@ -3,6 +3,7 @@ package com.vilia.miarrobawebscrapper.scrapper;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,22 +37,31 @@ public class ForumScrapperTest {
 	private static final String TEST_FIRST_THREAD_REGLAS_TITLE = "Pericias en no-armas";
 	private static final String TEST_FIRST_THREAD_REGLAS_HREF = "https://vilia.mforos.com/1910438/10886952-pericias-en-no-armas/";
 	
+	private static MiarrobaForum rootForum;
+	
+	@BeforeClass
+	public static void initializeRootForum() {
+		rootForum = scrapForumUrl(TEST_URL, null);
+	}
+	
 	@Test
 	public void testParentForumScrapper() {
-		MiarrobaForum forum = scrapForumUrl(TEST_URL);
+		MiarrobaForum parentForum = null;
+		
+		MiarrobaForum forum = scrapForumUrl(TEST_URL, parentForum);
 		
 		Assertions.assertEquals(TEST_FORUM_TITLE, forum.getForumTitle());
 	}
 
-	private static MiarrobaForum scrapForumUrl(String url) {
-		ForumScrapper forumScrapper = initForumScrapper(url);
+	private static MiarrobaForum scrapForumUrl(String url, MiarrobaForum parent) {
+		ForumScrapper forumScrapper = initForumScrapper(url, parent);
 		
 		MiarrobaForum forum = scrapForum(forumScrapper);
 		
 		return forum;
 	}
 	
-	private static ForumScrapper initForumScrapper(String urlString) {
+	private static ForumScrapper initForumScrapper(String urlString, MiarrobaForum parent) {
 		URL testUrl = null;
 		try {
 			testUrl = new URL(urlString);
@@ -60,7 +70,7 @@ public class ForumScrapperTest {
 			e.printStackTrace();
 		}
 		
-		return new ForumScrapper(testUrl, null);
+		return new ForumScrapper(testUrl, parent);
 	}
 	
 	private static MiarrobaForum scrapForum(ForumScrapper forumScrapper) {
@@ -78,7 +88,7 @@ public class ForumScrapperTest {
 	public void testPaginatedSubForumScrapper() {
 		String subForumURL = TEST_URL + TEST_GENERAL_FORUM_URL;
 		
-		MiarrobaForum forum = scrapForumUrl(subForumURL);
+		MiarrobaForum forum = scrapForumUrl(subForumURL, this.rootForum);
 		
 		Assertions.assertEquals(TEST_GENERAL_FORUM_TITLE, forum.getForumTitle(), "General subforum Title is not scrapped correctly");
 		
@@ -103,7 +113,7 @@ public class ForumScrapperTest {
 	public void testNonPaginatedForumScrapper() {
 		String subForumURL = TEST_URL + TEST_REGLAS_FORUM_URL;
 		
-		MiarrobaForum forum = scrapForumUrl(subForumURL);
+		MiarrobaForum forum = scrapForumUrl(subForumURL, this.rootForum);
 		
 		Assertions.assertEquals(TEST_REGLAS_FORUM_TITLE, forum.getForumTitle(), "Reglas subforum Title is not scrapped correctly");
 		
@@ -115,10 +125,10 @@ public class ForumScrapperTest {
 		Assertions.assertNotNull(firstThread, String.format("No threads were parsed in the %s subforum", TEST_REGLAS_FORUM_TITLE));
 		
 		if(firstThread != null) {
-			Assertions.assertEquals(TEST_FIRST_THREAD_GENERAL_TITLE, firstThread.getThreadTitle(), 
+			Assertions.assertEquals(TEST_FIRST_THREAD_REGLAS_TITLE, firstThread.getThreadTitle(), 
 					String.format("First thread title in %s subforum is inccorrect. Expected: %s, scrapped: %s", TEST_REGLAS_FORUM_TITLE, TEST_FIRST_THREAD_REGLAS_TITLE, firstThread.getThreadTitle()));
 			
-			Assertions.assertEquals(TEST_FIRST_THREAD_GENERAL_HREF, firstThread.getThreadUrl().toString(), 
+			Assertions.assertEquals(TEST_FIRST_THREAD_REGLAS_HREF, firstThread.getThreadUrl().toString(), 
 					String.format("First thread url in %s subforum is inccorrect. Expected: %s, scrapped: %s", TEST_REGLAS_FORUM_TITLE, TEST_FIRST_THREAD_REGLAS_HREF, firstThread.getThreadUrl().toString()));
 		}
 		

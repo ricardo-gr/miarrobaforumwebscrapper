@@ -37,14 +37,13 @@ public class ForumScrapper {
 	private static final String THREAD_ENTRIES_XPATH = THREADS_TABLE_XPATH
 			+ "/tr[contains(@class, 'tablaRow')]/td[contains(@class, 'ancho100')]/div[@class = 'topicMsg']/a";
 	private static final String THREADS_PAGINATOR_XPATH = THREADS_TABLE_XPATH
-			+ "tr[contains(@class, 'boxTitle')]/td/div[@class = 'paginacionForos']/div[@class='paginador']/a[contains(@class, 'number')]";
+			+ "/tr[contains(@class, 'boxTitle')]/td/div[@class = 'paginacionForos']/div[@class='paginador']/a[contains(@class, 'number')]";
 
 	private URL forumUrl;
 	private MiarrobaForum parentForum;
 	private List<URL> subForumURLs;
 	private List<MiarrobaThread> threads;
 	private MiarrobaForum forum;
-	private boolean isRootForum;
 
 	public ForumScrapper(URL forumUrl, MiarrobaForum parentForum) {
 		this.forumUrl = forumUrl;
@@ -55,9 +54,6 @@ public class ForumScrapper {
 		forum = new MiarrobaForum();
 		forum.setParentForum(parentForum);
 		forum.setForumUrl(forumUrl);
-
-		if (this.parentForum == null)
-			this.isRootForum = true;
 	}
 
 	public URL getForumUrl() {
@@ -71,10 +67,12 @@ public class ForumScrapper {
 
 		parseForumTitle(connection);
 
-		if (this.isRootForum)
+		if (this.forum.isRootForum())
 			parseSubForums(connection);
-		else
+		else {
 			parseThreads(connection);
+			this.forum.setThreads(this.threads);
+		}
 
 		return this.forum;
 	}
@@ -96,20 +94,18 @@ public class ForumScrapper {
 			throw new ForumScrapperException("The selected URL is not a MiArroba forum", forumUrl, "unknown");
 
 		if (isRootForum(doc)) {
-			if (!this.isRootForum) {
+			if (!this.forum.isRootForum()) {
 				// TODO: Define correct treatment in this case
 				logger.warn(String.format(
 						"Current forum url %s is a root forum. A parent forum was passed. Execution will continue for debug purposes",
 						forumUrl));
-				this.isRootForum = true;
-				this.parentForum = null;
+				this.forum.setParentForum(null);
 			}
-		} else if (this.isRootForum) {
+		} else if (this.forum.isRootForum()) {
 			// TODO: Define correct treatment in this case
 			logger.warn(String.format(
-					"Current forum url %s is NOT a root forum. A parent forum was not passed. Execution will continue for debug purposes",
+					"Current forum url %s is NOT a root forum. A parent forum was not passed. Execution will continue as it was a Root Forum",
 					forumUrl));
-			this.isRootForum = false;
 		}
 	}
 
@@ -219,7 +215,7 @@ public class ForumScrapper {
 		if (threadsPaginatorXml.isEmpty())
 			return urlList;
 		
-		urlList = threadsPaginatorXml.stream().map(page -> ScrapperFunctionalUtils.parseHrefAttributeMethod(page, forumUrl))
+		urlList = threadsPaginatorXml.stream().map(page -> ScrapperFunctionalUtils.parseHrefAttributeMethod(page, this.forum.getRootForumUrl()))
 				.filter(Objects::nonNull)
 				.toList();
 		
@@ -231,12 +227,12 @@ public class ForumScrapper {
 
 		Elements threadsXml = doc.selectXpath(THREAD_ENTRIES_XPATH);
 		
-		List<MiarrobaThread> threadsInPage = parseThreadsFromAnchorList(threadsXml, connection.getUrl());
+		List<MiarrobaThread> threadsInPage = parseThreadsFromAnchorList(threadsXml);
 		
 		this.threads.addAll(threadsInPage);
 	}
 
-	private List<MiarrobaThread> parseThreadsFromAnchorList(Elements threadsXml, URL url) {
+	private List<MiarrobaThread> parseThreadsFromAnchorList(Elements threadsXml) {
 		return threadsXml.stream().map(anchor -> {
 			MiarrobaThread thread = new MiarrobaThread();
 			
@@ -244,10 +240,12 @@ public class ForumScrapper {
 			String threadHref = anchor.attr("href");
 			URL threadHrefUrl = null;
 			
+			URL baseForumUrl = getBaseForumUrl();
+			
 			try {
-				threadHrefUrl = new URL(ScrapperFunctionalUtils.getBaseUrl(url) + threadHref);
+				threadHrefUrl = new URL(ScrapperFunctionalUtils.getBaseUrl(baseForumUrl) + threadHref);
 			} catch (Exception e) {
-				logger.error(String.format("Couldn't create URL for thread '%s' url in href: %s. Base url: %s", threadTitle, threadHref, url), e);
+				logger.error(String.format("Couldn't create URL for thread '%s' url in href: %s. Base url: %s", threadTitle, threadHref, baseForumUrl), e);
 				return null;
 			}
 				
@@ -258,6 +256,10 @@ public class ForumScrapper {
 			return thread;
 		}).filter(Objects::nonNull)
 				.toList();
+	}
+
+	private URL getBaseForumUrl() {
+		return this.forum.isRootForum() ? this.forumUrl : this.parentForum.getForumUrl();
 	}
 
 	private void scrapAdditionalThreadPages(URL url) {

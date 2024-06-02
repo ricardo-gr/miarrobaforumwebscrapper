@@ -17,7 +17,7 @@ public class ScrapperFunctionalUtils {
 		
 		URL pageURL = null;
 		try {
-			pageURL = new URL(baseUrl.toString() + pageURL);
+			pageURL = new URL(baseUrl.toString() + pageRelativeUrl);
 		} catch (Exception ex) {
 			logger.error(String.format("Error while parsing paginator URL. Formed URL is not compliant: %s", pageRelativeUrl), ex);
 		}

@@ -78,6 +78,19 @@ public class MiarrobaForum {
 		return this.threads.size();
 	}
 	
+	public boolean isRootForum() {
+		return this.getForumLevel() == 1;
+	}
+	
+	public URL getRootForumUrl() {
+		MiarrobaForum forum = this;
+		
+		while(!forum.isRootForum())
+			forum = forum.getParentForum();
+		
+		return forum.getForumUrl();
+	}
+	
 	@Override
 	public String toString() {
 		return "MiarrobaForum [forumId=" + forumId + ", forumUrl=" + forumUrl + ", parentForum=" + parentForum
