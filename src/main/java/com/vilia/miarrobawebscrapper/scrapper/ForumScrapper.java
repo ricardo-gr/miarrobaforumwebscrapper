@@ -90,31 +90,22 @@ public class ForumScrapper {
 	private void checkMiarrobaForum(ScrapperUrlConnector connection) throws ForumScrapperException {
 		Document doc = connection.getDocument();
 
-		if (!isMiarrobaForum(doc))
-			throw new ForumScrapperException("The selected URL is not a MiArroba forum", forumUrl, "unknown");
-
 		if (isRootForum(doc)) {
 			if (!this.forum.isRootForum()) {
-				// TODO: Define correct treatment in this case
-				logger.warn(String.format(
+				throw new ForumScrapperException(String.format(
 						"Current forum url %s is a root forum. A parent forum was passed. Execution will continue for debug purposes",
-						forumUrl));
-				this.forum.setParentForum(null);
+						forumUrl), 
+						forumUrl, "Unknown");
 			}
 		} else if (this.forum.isRootForum()) {
-			// TODO: Define correct treatment in this case
-			logger.warn(String.format(
+			throw new ForumScrapperException(String.format(
 					"Current forum url %s is NOT a root forum. A parent forum was not passed. Execution will continue as it was a Root Forum",
-					forumUrl));
+					forumUrl),
+					forumUrl, "Unknown");
 		}
 	}
 
-	private boolean isMiarrobaForum(Document doc) {
-		// TODO Auto-generated method stub
-		return true;
-	}
-
-	private boolean isRootForum(Document doc) {
+	private boolean isRootForum(Document doc) throws ForumScrapperException {
 		Elements subforumsSection = doc.selectXpath(ROOT_FORUM_CONTENT_SECTION_XPATH);
 		Elements threadsSection = doc.selectXpath(SUBFORUM_CONTENT_SECTION_XPATH);
 
@@ -124,8 +115,7 @@ public class ForumScrapper {
 		if (threadsSection.size() > 0)
 			return false;
 
-		// TODO: Change with exception
-		return false;
+		throw new ForumScrapperException(String.format("Parsed URL is not a Forum page: %s", this.forumUrl.toString()), this.forumUrl, "Unknown");
 	}
 
 	private void parseForumTitle(ScrapperUrlConnector connection) throws ForumScrapperException {
