@@ -14,6 +14,7 @@ public class ScrappingUtils {
 	
 	public static final String ROOT_FORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionComu']";
 	public static final String SUBFORUM_CONTENT_SECTION_XPATH = "/html/body/div[@id='SectionForo']";
+	public static final String THREAD_CONTENT_SECTION_XPATH = "/html/body/div[@id='mmenu_wrapper']/div[@id='SectionTema']";
 	
 	private ScrappingUtils() {}
 	
