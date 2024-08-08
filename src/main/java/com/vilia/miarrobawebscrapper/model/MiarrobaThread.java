@@ -17,7 +17,6 @@ import jakarta.persistence.OneToOne;
 @Entity
 public class MiarrobaThread {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long threadId;
 	@Column
 	private URL threadUrl;

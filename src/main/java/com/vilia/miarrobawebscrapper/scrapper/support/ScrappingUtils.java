@@ -1,7 +1,8 @@
 package com.vilia.miarrobawebscrapper.scrapper.support;
 
 import java.net.URL;
-import java.util.function.BiFunction;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
@@ -48,6 +49,14 @@ public class ScrappingUtils {
 		}
 
 		return connection;
+	}
+	
+	public static LocalDateTime parseDateTime(String dateTimeString) {
+		LocalDateTime res;
+		
+		res = LocalDateTime.parse(dateTimeString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+		
+		return res;
 	}
 
 }

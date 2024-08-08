@@ -1,10 +1,14 @@
-package com.vilia.miarrobawebscrapper.scrapper.forumscrapper;
+package com.vilia.miarrobawebscrapper.scrapper;
+
+import java.net.URL;
+import java.time.LocalDateTime;
 
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.vilia.miarrobawebscrapper.model.MiarrobaMessage;
+import com.vilia.miarrobawebscrapper.scrapper.support.ScrappingUtils;
 
 public class MessageScrapper {
 	private static Logger logger = LoggerFactory.getLogger(MessageScrapper.class);
@@ -18,13 +22,16 @@ public class MessageScrapper {
 	protected static final String MESSAGE_CONTENT_XPATH = MESSAGE_COLUMN_XPATH + "/div/div[contains(@id, 'e_msg_')]";
 	
 	private Element messageXml;
+	private URL baseUrl;
 	private MiarrobaMessage message;
 	
-	public MessageScrapper(Element messageXml) {
+	public MessageScrapper(Element messageXml, URL baseUrl) {
 		if (verifyIsMessage(messageXml))
 			this.messageXml = messageXml;
 		else
 			this.messageXml = null;
+		
+		this.baseUrl = baseUrl;
 		
 		this.message = new MiarrobaMessage();
 	}
@@ -65,8 +72,16 @@ public class MessageScrapper {
 	}
 
 	protected void parseMessageUrl() {
-		// TODO Auto-generated method stub
+		Element urlXml = messageXml.selectXpath(MESSAGE_URL_XPATH).first();
 		
+		if (urlXml == null) {
+			logger.error(String.format("Could not find URL for message ID: %d", message.getMessageId()));
+			return;
+		}
+		
+		URL url = ScrappingUtils.parseHrefAttributeMethod(urlXml, this.baseUrl);
+		
+		this.message.setMessageUrl(url);
 	}
 
 	protected void parseMessageUser() {
@@ -75,13 +90,24 @@ public class MessageScrapper {
 	}
 
 	protected void parseMessageDateTime() {
-		// TODO Auto-generated method stub
+		Element dateXml = messageXml.selectXpath(MESSAGE_DATE_XPATH).first();
 		
+		String dateTimeString = dateXml.attr("datetime");
+		
+		LocalDateTime dateTime = ScrappingUtils.parseDateTime(dateTimeString);
+		
+		this.message.setPostDate(dateTime);		
 	}
 
 	protected void parseMessageContent() {
-		// TODO Auto-generated method stub
+		Element contentXml = messageXml.selectXpath(MESSAGE_CONTENT_XPATH).first();
 		
+		String html = contentXml.html();
+		
+		String content = contentXml.wholeText();
+		
+		this.message.setContent(content);
+		this.message.setContentHTML(html);
 	}
 	
 	

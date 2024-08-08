@@ -1,7 +1,7 @@
 package com.vilia.miarrobawebscrapper.scrapper;
 
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +11,7 @@ import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.vilia.miarrobawebscrapper.model.MiarrobaMessage;
 import com.vilia.miarrobawebscrapper.model.MiarrobaThread;
 import com.vilia.miarrobawebscrapper.scrapper.exception.ForumScrapperException;
 import com.vilia.miarrobawebscrapper.scrapper.support.ScrapperUrlConnector;
@@ -27,14 +28,46 @@ public class ThreadScrapper {
 			+ "/table[contains(@id, 'ForoMensaje']";	
 	
 	private MiarrobaThread thread;
+	private URL baseUrl;
 	
 	public ThreadScrapper(MiarrobaThread thread) {
 		this.thread = thread;
+		
+		initBaseUrl(thread.getThreadUrl());
 	}
 	
 	public ThreadScrapper(URL url) {
 		this.thread = new MiarrobaThread();
 		this.thread.setThreadUrl(url);
+		
+		initBaseUrl(url);	
+		
+		ihitThreadId(url);
+	}
+	
+	private void ihitThreadId(URL url) {
+		//We assume the thread URLs are in the form: https://forum.miarriba.com/1234567/XXXXXX-thread-title/
+		String urlStr = url.toString().replaceFirst(this.baseUrl.toString() + "/", "");
+		
+		int firstHiphenPos = urlStr.indexOf('-');
+		int firstBar = urlStr.indexOf('/');
+		
+		String threadIdStr = urlStr.substring(firstBar + 1, firstHiphenPos);
+		
+		Long threadId = Long.parseLong(threadIdStr);
+		
+		this.thread.setThreadId(threadId);
+	}
+
+	private void initBaseUrl(URL url) {
+		String hostUrlStr = url.getProtocol() + "://" + url.getHost();
+		
+		try {
+			this.baseUrl = new URL(hostUrlStr);
+		} catch (MalformedURLException e) {
+			logger.error(String.format("Couldn't parse baseURL for MiarrobaThread: %s. Continuing with thread base URL", hostUrlStr));
+			this.baseUrl = url;
+		}
 	}
 	
 	public URL getThreadUrl() {
@@ -68,7 +101,7 @@ public class ThreadScrapper {
 		return null;
 	}
 
-	private void parseThreadMessages(ScrapperUrlConnector connection, List<URL> threadPages) {
+	private void parseThreadMessages(ScrapperUrlConnector connection, List<URL> threadPages) throws ForumScrapperException {
 		Document doc = connection.getDocument();
 		
 		Elements messagesXml = doc.selectXpath(THREAD_MESSAGES_XPATH);
@@ -84,14 +117,30 @@ public class ThreadScrapper {
 		
 		messagesXml.addAll(additionalMessages);
 		
-		messagesXml.stream()
-				.forEach(this::parseMessage);
+		List <MiarrobaMessage> comments = messagesXml.stream()
+				.map(this::parseComment)
+				.filter(message -> message != null)
+				.collect(Collectors.toList());
 		
+		this.thread.setComments(comments);
 	}
 	
-	private void parseThreadFirstMessage(Element firstMessage) {
-		// TODO Auto-generated method stub
+	private void parseThreadFirstMessage(Element firstMessageXml) throws ForumScrapperException {
+		MiarrobaMessage message = parseMessage(firstMessageXml);
 		
+		this.thread.setStartingMessage(message);
+	}
+
+	private MiarrobaMessage parseMessage(Element firstMessage) throws ForumScrapperException {
+		MessageScrapper messageScrapper = new MessageScrapper(firstMessage, this.baseUrl);
+		
+		if(!messageScrapper.isMessageReady()) {
+			throw new ForumScrapperException(this.thread.getThreadUrl(), 
+					String.format("First thread message cannot be parsed. Passed XML is not a message"));
+		}
+		
+		MiarrobaMessage message = messageScrapper.parseMessage();
+		return message;
 	}
 
 	private static Elements getMessagesFromSubpages(URL url) {
@@ -108,7 +157,15 @@ public class ThreadScrapper {
 		return doc.selectXpath(THREAD_MESSAGES_XPATH);
 	}
 	
-	private void parseMessage(Element messageXml) {
-		//TODO: Create method
+	private MiarrobaMessage parseComment(Element messageXml) {
+		MiarrobaMessage message = null;
+		try {
+			message = parseMessage(messageXml);
+		} catch (ForumScrapperException e) {
+			logger.error("Error parsing comment", e);
+			return null;
+		}
+		
+		return message;
 	}
 }
