@@ -17,7 +17,7 @@ import com.vilia.miarrobawebscrapper.scrapper.support.ScrapperUrlConnector;
 import com.vilia.miarrobawebscrapper.scrapper.support.ScrappingUtils;
 
 public class ThreadScrapper {
-	private static Logger logger = LoggerFactory.getLogger(ForumScrapper.class);
+	private static Logger logger = LoggerFactory.getLogger(ThreadScrapper.class);
 	
 	private static final String THREAD_TITLE_XPATH = ScrappingUtils.THREAD_CONTENT_SECTION_XPATH 
 			+ "/table[@id = 'ForoMenuIndice']/tbody/tr/td/div[@id = 'to-the-top']/div[@class = 'columnsContainer']/div[@class = 'texto_big']/a";

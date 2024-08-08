@@ -15,7 +15,6 @@ import jakarta.persistence.ManyToOne;
 @Entity
 public class MiarrobaMessage {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private long messageId;
 	@Column
 	private URL messageUrl;
