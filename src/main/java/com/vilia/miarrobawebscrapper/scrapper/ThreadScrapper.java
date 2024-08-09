@@ -24,7 +24,7 @@ public class ThreadScrapper {
 			+ "/table[@id = 'ForoMenuIndice']/tbody/tr/td/div[@id = 'to-the-top']/div[@class = 'columnsContainer']/div[@class = 'texto_big']/a";
 	private static final String THREAD_PAGINATOR_XPATH = ScrappingUtils.THREAD_CONTENT_SECTION_XPATH
 			+ "/table/tbody/tr/td/div[@class = 'paginacionForos']/div[@class = 'paginador']";
-	private static final String THREAD_MESSAGES_XPATH = ScrappingUtils.THREAD_CONTENT_SECTION_XPATH
+	public static final String THREAD_MESSAGES_XPATH = ScrappingUtils.THREAD_CONTENT_SECTION_XPATH
 			+ "/table[contains(@id, 'ForoMensaje']";	
 	
 	private MiarrobaThread thread;

@@ -18,6 +18,7 @@ import com.vilia.miarrobawebscrapper.model.MiarrobaForum;
 import com.vilia.miarrobawebscrapper.model.MiarrobaThread;
 import com.vilia.miarrobawebscrapper.scrapper.exception.ForumScrapperException;
 import com.vilia.miarrobawebscrapper.scrapper.forumscrapper.ForumScrapperFactory;
+import com.vilia.miarrobawebscrapper.support.MiarrobaForumTestHelper;
 
 @RunWith(SpringRunner.class)
 @ExtendWith(MockitoExtension.class)
@@ -25,7 +26,6 @@ import com.vilia.miarrobawebscrapper.scrapper.forumscrapper.ForumScrapperFactory
 public class ForumScrapperTest {
 	private static Logger logger = LoggerFactory.getLogger(ForumScrapperTest.class);
 	
-	private static final String TEST_URL = "https://vilia.mforos.com";
 	private static final String TEST_GENERAL_FORUM_URL = "/968735-general";
 	private static final String TEST_REGLAS_FORUM_URL = "/1910438-reglas/";
 	
@@ -46,14 +46,14 @@ public class ForumScrapperTest {
 	
 	@BeforeClass
 	public static void initializeRootForum() {
-		rootForum = scrapForumUrl(TEST_URL, null);
+		rootForum = scrapForumUrl(MiarrobaForumTestHelper.TEST_URL, null);
 	}
 	
 	@Test
 	public void testParentForumScrapper() {
 		MiarrobaForum parentForum = null;
 		
-		MiarrobaForum forum = scrapForumUrl(TEST_URL, parentForum);
+		MiarrobaForum forum = scrapForumUrl(MiarrobaForumTestHelper.TEST_URL, parentForum);
 		
 		Assertions.assertEquals(TEST_FORUM_TITLE, forum.getForumTitle());
 	}
@@ -120,7 +120,7 @@ public class ForumScrapperTest {
 	
 	@Test
 	public void testPaginatedSubForumScrapper() {
-		String subForumURL = TEST_URL + TEST_GENERAL_FORUM_URL;
+		String subForumURL = MiarrobaForumTestHelper.TEST_URL + TEST_GENERAL_FORUM_URL;
 		
 		MiarrobaForum forum = scrapForumUrl(subForumURL, this.rootForum);
 		
@@ -145,7 +145,7 @@ public class ForumScrapperTest {
 	
 	@Test
 	public void testNonPaginatedForumScrapper() {
-		String subForumURL = TEST_URL + TEST_REGLAS_FORUM_URL;
+		String subForumURL = MiarrobaForumTestHelper.TEST_URL + TEST_REGLAS_FORUM_URL;
 		
 		MiarrobaForum forum = scrapForumUrl(subForumURL, this.rootForum);
 		
